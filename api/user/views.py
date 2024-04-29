@@ -1,16 +1,17 @@
-from django.contrib.auth import login, logout
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.views import APIView
+from django.shortcuts import render
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .serializers import UserLoginSerializer, UserSerializer
-from rest_framework import permissions, status
-from ..validations import custom_validation, validate_email, validate_password
+from rest_framework.views import APIView
+from .serializers import UserSerializer, UserLoginSerializer
+from django.db.models import Q
+from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
 
 
-class UserRegister(APIView):
+class RegisterUser(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -23,38 +24,22 @@ class UserRegister(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 """Login"""
-from django.contrib.auth import authenticate
-
-
 class LoginUser(APIView):
-    serializer_class = UserLoginSerializer
+    serializer = UserLoginSerializer
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']  # Retrieve validated user from serializer
+            email = request.data.get('email')
+            password = request.data.get('password')
+            
+            if email is None or password is None:
+                return Response({'error': 'Please provide both email and password'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.filter(email=email).first()
+
+            if user is None or not user.check_password(password):
+                return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+
             token, created = Token.objects.get_or_create(user=user)
-            user_serializer = UserSerializer(user)
-            return Response({
-                'message': 'Login successful',
-                'success': True,
-                'token': token.key,
-                'user': user_serializer.data
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class UserLogout(APIView):
-	permission_classes = (permissions.AllowAny,)
-	authentication_classes = ()
-	def post(self, request):
-		logout(request)
-		return Response(status=status.HTTP_200_OK)
+            serializer = UserSerializer()
+            return Response({'message': 'Login successful', 'success': True, 'token': token.key, 'user': serializer.data}, status=status.HTTP_200_OK)
 
 
-class UserView(APIView):
-	permission_classes = (permissions.IsAuthenticated,)
-	authentication_classes = (SessionAuthentication,)
-	##
-	def get(self, request):
-		serializer = UserSerializer(request.user)
-		return Response({'user': serializer.data}, status=status.HTTP_200_OK)

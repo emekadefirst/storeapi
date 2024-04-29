@@ -4,31 +4,24 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from django.contrib.auth import authenticate
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+
+    def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data.get('password'))
+        user = User.objects.create(**validated_data)
+        return user
 
 class UserLoginSerializer(serializers.Serializer):
 	email = serializers.EmailField()
 	password = serializers.CharField()
-
-	def validate(self, data):
-			email = data.get('email')
-			password = data.get('password')
-
-			if email and password:
-				user = authenticate(email=email, password=password)
-
-				if user:
-					data['user'] = user  # Add validated user to serializer data
-					return data
-				else:
-					raise ValidationError('Invalid email or password')
-			else:
-				raise ValidationError('Both email and password are required')
-
-
-class UserSerializer(serializers.ModelSerializer):
-	class Meta:
-		model = User
-		fields = ('email', 'username')
+	##
+	def check_user(self, clean_data):
+		user = authenticate(username=clean_data['email'], password=clean_data['password'])
+		if not user:
+			raise ValidationError('user not found')
+		return user

@@ -6,7 +6,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ['id', 'user', 'user_email', 'amount', 'order', 'status', 'reference', 'time']
+        fields = ['id', 'user', 'user_email', 'amount']
 
     def get_user_email(self, obj):
         return obj.user.email

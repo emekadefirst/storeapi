@@ -24,3 +24,8 @@ class Payment(models.Model):
     class Meta:
         ordering = ["-time"]  # Ordering by the 'time' field in descending order
 
+
+{
+    "email": "test@mail.com",
+    "amount": 20000,
+}

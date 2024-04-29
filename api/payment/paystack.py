@@ -1,10 +1,11 @@
-import os
 import requests
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 sk = os.environ.get('PAYSTACK')
+
 
 class Paystack:
     def __init__(self, email, amount, secret_key):
@@ -13,7 +14,7 @@ class Paystack:
         self.secret_key = sk
 
     def pay(self):
-        url = "/transaction/initialize"
+        url = "https://api.paystack.co/transaction/initialize"
         data = {
             "email": self.email,
             "amount": self.amount * 100
@@ -31,12 +32,9 @@ class Paystack:
                 'reference_id': ref,
                 'auth_url': auth_link
                 }
-            return result
+            return  result
         return "404"
         
-
-import requests
-
 class Verify:
     def __init__(self, reference, secret_key):
         self.reference = reference
@@ -64,3 +62,5 @@ class Verify:
                 # Retry if the status code is not 200
                 timeout_counter += 1
         return "timeout"
+    
+    
